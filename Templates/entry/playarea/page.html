@@ -195,9 +195,7 @@
                     <h2 className="card-title">現在の内容</h2>
                     <p>{nowContent}</p>
                     <p>{userUuid}</p>
-                    <div className="card-actions justify-end">
-                      <button className="btn btn-primary">Buy Now</button>
-                    </div>
+                    
                   </div>
                 </div>
                 <br />
@@ -207,8 +205,9 @@
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 ></textarea>
+                <br/>
                 <button
-                  className="w-full m-2"
+                  className="w-full bg-indigo-400 rounded-lg p-2 text-black"
                   onClick={() => {
                     handleSendMessage(inputText);
                     setInputText("");
@@ -243,7 +242,6 @@
                             <span>   {message.likes}</span>
                           </>
                         ) }
-
                       </div>
                       <div className="divider"></div>
                     </div>
