@@ -15,7 +15,8 @@
         "react-dom": "https://esm.sh/react-dom@19.0.0/client",
         "socket.io-client": "https://esm.sh/socket.io-client@4.8.1",
         "clsx": "https://esm.sh/clsx",
-        "class-variance-authority": "https://esm.sh/class-variance-authority"
+        "class-variance-authority": "https://esm.sh/class-variance-authority",
+        "uuid" : "https://esm.sh/uuid"
       }
     }
 
@@ -32,6 +33,7 @@
     import clsx from "clsx"
     import { cva } from "class-variance-authority"
     import { io } from "socket.io-client"
+    import { v4 as uuidv4 } from "uuid"
     
     
 
@@ -48,43 +50,105 @@
       const [ userUuid , setUserUuid ] = useState("");
       const [ inputText , setInputText ] = useState("");
       const [ isLoaded, setIsLoaded ] = useState(false);
+      const [ cookieValue, setCookieValue ] = useState("");
+      const [ isLikes, setIsLikes ] = useState([]);
+      const [ nowContent, setNowContent ] = useState("");
+      const COOKIE_NAME = "user_uuid";
+
+
+      const getCookie = (name) => {
+        const cookies = document.cookie.split(";");
+        for (let cookie of cookies) {
+          const [cookieName, cookieValue] = cookie.split("=").map((c) => c.trim());
+          if (cookieName === name) {
+            return cookieValue;
+          }
+        }
+        return "";
+      }
+
+      const setCookie = (name, value, days = 7) => {
+        const expires = new Date();
+        expires.setDate(expires.getDate() + days);
+        document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+        console.log(name, value);
+        setUserUuid(value);
+      }
 
       useEffect(() => {
-
-        setUserUuid(Math.random().toString(32).substring(2));
+        const existingCookie = getCookie(COOKIE_NAME);
+        if (existingCookie === "") {
+          setCookie(COOKIE_NAME , uuidv4());
+        } else {
+          setUserUuid(existingCookie);
+        }
         const socket = io("http://localhost:5000");
-
-        socket.emit("join", data.roomid);
-
-        socket.on("message_history", (history) => {
-          setMessages(history);
-          console.log(history);
+        
+        const joinData = {
+          roomid: data.roomid,
+          userid: existingCookie
+        }
+        socket.emit("join", joinData);
+        socket.on("message_history", (data) => {
+          setMessages(data.data);
+          setIsLikes(data.isLike);
+          console.log(data.isLike);
         })
         socket.on("new_message", (message) => {
           console.log(message);
           setMessages((prev) => {
             return [...prev, message];
           });
+          setIsLikes((prev) => {
+            return [...prev, false];
+          });
+          console.log(isLikes);
+        });
+        socket.on("like_plus_return", (data) => {
+          setMessages((prev) => {
+            return prev.map((message) => {
+              if (message.textid === data.textid) {
+                return {
+                  ...message,
+                  likes: message.likes + 1
+                }
+              }
+              return message;
+            });
+          });
+          setIsLikes(prev => {
+            const newList = [...prev].slice().reverse();
+            newList[data.index] = true;
+            return newList.slice().reverse();
+          });
         });
         setIsLoaded(true);
       }, []);
-
-      const sendMessage = (e) => {
+      const handleSendMessage = (e) => {
         if (e === "") {
+          alert("文字を入力してください");
           return;
         }
-
         const socket = io("http://localhost:5000");
-
         const sendMessage = {
           text: e,
-          textid: Math.random().toString(32).substring(2),
+          textid: uuidv4(),
           userid: userUuid
         }
         console.log(sendMessage);
         socket.emit("message", sendMessage, data.roomid);
       };
-      
+      const handleLikePlus = (textid, index) => {
+        
+        const socket = io("http://localhost:5000");
+        const likePlusData = {
+          textid: textid,
+          userid: userUuid,
+          roomid: data.roomid,
+          index: index
+        }
+        socket.emit("like_plus", likePlusData);
+      }
       if (!isLoaded) {
         return (
           <div>
@@ -114,7 +178,7 @@
                   </svg>
                 </label>
               </div>
-              <div className="mx-2 flex-1 px-2">Navbar Title</div>
+              <div className="mx-2 flex-1 px-2">{data.name}</div>
               <div className="hidden flex-none lg:block">
                 <ul className="menu menu-horizontal">
                   {/* Navbar menu content here */}
@@ -126,15 +190,17 @@
             <div className="grid grid-cols-2 h-100">
                 {/* dataShow */}
                 <div className="m-4">
-                  <div className="card bg-base-100 w-96 shadow-xl">
+                  <div className="card bg-base-100 w-full shadow-xl p-3">
                   <div className="card-body">
-                    <h2 className="card-title">Card title!</h2>
-                    <p>If a dog chews shoes whose shoes does he choose?</p>
+                    <h2 className="card-title">現在の内容</h2>
+                    <p>{nowContent}</p>
+                    <p>{userUuid}</p>
                     <div className="card-actions justify-end">
                       <button className="btn btn-primary">Buy Now</button>
                     </div>
                   </div>
                 </div>
+                <br />
                 <textarea 
                 className="textarea textarea-bordered w-full" 
                 placeholder="質問"
@@ -142,10 +208,11 @@
                 onChange={(e) => setInputText(e.target.value)}
                 ></textarea>
                 <button
-                  className="btn btn-primary w-full"
+                  className="w-full m-2"
                   onClick={() => {
-                    sendMessage(inputText);
+                    handleSendMessage(inputText);
                     setInputText("");
+                    console.log(isLikes);
                   }}
                 >
                   送信={'>'}
@@ -161,31 +228,22 @@
                         <br/>
                         { message.userid === userUuid ? (
                           <>
-                          
+                          {message.likes}
                           </>
                         ) : (
                           <>
                           <button
-                            className={"btn btn-circle btn-sm"}
+                            className={clsx("btn btn-circle btn-sm", (isLikes.reduceRight((p, c) => [...p, c], []))[index] && "btn-disabled")}
                             onClick={() => {
-                              const newMessages = messages.map((m) => {
-                                if (m.uuid === message.uuid) {
-                                  return {
-                                    ...m,
-                                    likes: m.likes + 1
-                                  }
-                                }
-                                return m;
-                              });
-                              setMessages(newMessages);
+                              handleLikePlus(message.textid, index);
                             }}
                             >
-                              <i class="fa-regular fa-heart"></i>
+                                <i className={clsx("fa-regular fa-heart ", (isLikes.reduceRight((p, c) => [...p, c], []))[index] && "text-red-600" )} ></i>
                             </button>
                             <span>   {message.likes}</span>
                           </>
                         ) }
-                        
+
                       </div>
                       <div className="divider"></div>
                     </div>
@@ -205,7 +263,6 @@
         </>
       );
     };
-
     const container = document.getElementById("app");
     const root = createRoot(container);
     root.render(<App />);
