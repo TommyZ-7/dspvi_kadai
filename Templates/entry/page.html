@@ -6,13 +6,13 @@
   <title>index</title>
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
   <script src="https://cdn.tailwindcss.com"></script>
+
   <script type="importmap">
     {
       "imports": {
         "@jsxImportSource": "https://esm.sh/react@19.0.0",
         "react": "https://esm.sh/react@19.0.0",
         "react-dom": "https://esm.sh/react-dom@19.0.0/client",
-        "socket.io-client": "https://esm.sh/socket.io-client@4.8.1",
         "clsx": "https://esm.sh/clsx",
         "class-variance-authority": "https://esm.sh/class-variance-authority"
       }
@@ -24,53 +24,48 @@
   <script type="module" src="https://esm.sh/v135/run" defer></script>
 </head>
 <body>
-  <div id="app"></div>
+  <div id="app">
+
+  </div>
   <script type="text/babel">
     import React, {useEffect} from "react"
     import { createRoot } from "react-dom"
-    import { io } from "socket.io-client"
     import clsx from "clsx"
     import { cva } from "class-variance-authority"
 
     const App = () => {
-
-
-      const [ messages, setMessages ] = React.useState([]);
-
-      useEffect(() => {
-        const socket = io("http://localhost:5000");
-
-        socket.emit("join", "test");
-
-        socket.on("message_history", (history) => {
-          setMessages(history);
-          
-        })
-        socket.on("new_message", (message) => {
-          setMessages(message);
-        });
-      }, []);
-
-      const sendMessage = (e) => {
-
-        const socket = io("http://localhost:5000");
-        socket.emit("message", e);
-      };
-
+      const data = {{ roomdata | tojson | safe }};
+      console.log(data);
       return (
         <>
-          <div >
-            {messages.map((m, i) => (
-              <div key={i} className={"text-slate-50"}>{m}</div>
-            ))}
+        <div
+        
+        className="flex items-center justify-center h-screen bg-[url('../../static//images/bg1.webp')] bg-cover bg-center"
+        >  
+          <div className="card glass w-96">
+            <figure>
+              <img
+                src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+                alt="car!" />
+            </figure>
+            <div className="card-body">
+              <h2 className="card-title">{data.name}</h2>
+              <p>{data.comment}</p>
+              <div className="card-actions justify-end">
+                <button 
+                className="btn btn-primary"
+                onClick={() => {
+                  window.location.href = "/entry/" + data.roomid + "/playarea/";
+                }}
+                >
+                  entry
+                </button>
+              </div>
+            </div>
           </div>
-          <input type="text" onKeyPress={(e) => e.key === "Enter" && sendMessage(e.target.value)} />
-          <button className="btn" onClick={() => console.log(messages)}>
-            テスト
-          </button>
+        </div>
         </>
       );
-      
     };
     const container = document.getElementById("app");
     const root = createRoot(container);

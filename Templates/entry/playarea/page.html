@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>index</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://use.fontawesome.com/releases/v6.7.2/css/all.css" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "@jsxImportSource": "https://esm.sh/react@19.0.0",
+        "react": "https://esm.sh/react@19.0.0",
+        "react-dom": "https://esm.sh/react-dom@19.0.0/client",
+        "socket.io-client": "https://esm.sh/socket.io-client@4.8.1",
+        "clsx": "https://esm.sh/clsx",
+        "class-variance-authority": "https://esm.sh/class-variance-authority"
+      }
+    }
+
+  </script>
+  
+  <script type="module" src="https://esm.sh/v135/run" defer></script>
+</head>
+<body>
+  <div id="app">
+  </div>
+  <script type="text/babel">
+    import React, { useEffect, useState } from "react"
+    import { createRoot } from "react-dom"
+    import clsx from "clsx"
+    import { cva } from "class-variance-authority"
+    import { io } from "socket.io-client"
+    
+    
+
+    const App = () => {
+      const data = {{ roomdata | tojson | safe }};
+
+      const [ messages, setMessages ] = useState([{
+        text: "Loading...", 
+        textid: "Loading...",
+        userid: "Loading...",
+        likes: 0,
+        isAnswerd: false
+      }]);
+      const [ userUuid , setUserUuid ] = useState("");
+      const [ inputText , setInputText ] = useState("");
+      const [ isLoaded, setIsLoaded ] = useState(false);
+
+      useEffect(() => {
+
+        setUserUuid(Math.random().toString(32).substring(2));
+        const socket = io("http://localhost:5000");
+
+        socket.emit("join", data.roomid);
+
+        socket.on("message_history", (history) => {
+          setMessages(history);
+          console.log(history);
+        })
+        socket.on("new_message", (message) => {
+          console.log(message);
+          setMessages((prev) => {
+            return [...prev, message];
+          });
+        });
+        setIsLoaded(true);
+      }, []);
+
+      const sendMessage = (e) => {
+        if (e === "") {
+          return;
+        }
+
+        const socket = io("http://localhost:5000");
+
+        const sendMessage = {
+          text: e,
+          textid: Math.random().toString(32).substring(2),
+          userid: userUuid
+        }
+        console.log(sendMessage);
+        socket.emit("message", sendMessage, data.roomid);
+      };
+      
+      if (!isLoaded) {
+        return (
+          <div>
+            <h1>Loading...</h1>
+          </div>
+        )
+      }
+      return (
+        <>
+        <div className="drawer">
+          <input id="my-drawer-3" type="checkbox" className="drawer-toggle" />
+          <div className="drawer-content flex flex-col">
+            {/* Navbar */}
+            <div className="navbar bg-base-300 w-full">
+              <div className="flex-none lg:hidden">
+                <label htmlFor="my-drawer-3" aria-label="open sidebar" className="btn btn-square btn-ghost">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    className="inline-block h-6 w-6 stroke-current">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 6h16M4 12h16M4 18h16"></path>
+                  </svg>
+                </label>
+              </div>
+              <div className="mx-2 flex-1 px-2">Navbar Title</div>
+              <div className="hidden flex-none lg:block">
+                <ul className="menu menu-horizontal">
+                  {/* Navbar menu content here */}
+                  <li><a>Navbar Item 1</a></li>
+                  <li><a>Navbar Item 2</a></li>
+                </ul>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 h-100">
+                {/* dataShow */}
+                <div className="m-4">
+                  <div className="card bg-base-100 w-96 shadow-xl">
+                  <div className="card-body">
+                    <h2 className="card-title">Card title!</h2>
+                    <p>If a dog chews shoes whose shoes does he choose?</p>
+                    <div className="card-actions justify-end">
+                      <button className="btn btn-primary">Buy Now</button>
+                    </div>
+                  </div>
+                </div>
+                <textarea 
+                className="textarea textarea-bordered w-full" 
+                placeholder="質問"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                ></textarea>
+                <button
+                  className="btn btn-primary w-full"
+                  onClick={() => {
+                    sendMessage(inputText);
+                    setInputText("");
+                  }}
+                >
+                  送信={'>'}
+                </button>
+                </div>
+                {/* Chat */}
+                <div className="m-4 h-screen overflow-y-auto">
+                  <div className="divider">Chat</div>
+                  {(messages.reduceRight((p, c) => [...p, c], [])).map((message, index) => (
+                    <div key={index}>
+                      <div className="m-3" >
+                        <p>{message.text}</p>
+                        <br/>
+                        { message.userid === userUuid ? (
+                          <>
+                          
+                          </>
+                        ) : (
+                          <>
+                          <button
+                            className={"btn btn-circle btn-sm"}
+                            onClick={() => {
+                              const newMessages = messages.map((m) => {
+                                if (m.uuid === message.uuid) {
+                                  return {
+                                    ...m,
+                                    likes: m.likes + 1
+                                  }
+                                }
+                                return m;
+                              });
+                              setMessages(newMessages);
+                            }}
+                            >
+                              <i class="fa-regular fa-heart"></i>
+                            </button>
+                            <span>   {message.likes}</span>
+                          </>
+                        ) }
+                        
+                      </div>
+                      <div className="divider"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+          </div>
+          <div className="drawer-side">
+            <label htmlFor="my-drawer-3" aria-label="close sidebar" className="drawer-overlay"></label>
+            <ul className="menu bg-base-200 min-h-full w-80 p-4">
+              {/* Sidebar content here */}
+              <li><a>Sidebar Item 1</a></li>
+              <li><a>Sidebar Item 2</a></li>
+            </ul>
+          </div>
+        </div>
+        </>
+      );
+    };
+
+    const container = document.getElementById("app");
+    const root = createRoot(container);
+    root.render(<App />);
+  </script>
+</body>
+</html>
