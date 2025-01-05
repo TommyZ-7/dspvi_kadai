@@ -149,6 +149,7 @@ def handle_like_plus(data):
         text_db.close()
         returnData = { 
             "textid": data["textid"] ,
+            "userid": data["userid"],
             "index" : data["index"]
         }
         emit("like_plus_return", returnData, broadcast=True)
@@ -158,4 +159,4 @@ def handle_like_plus(data):
     
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=False, host="0.0.0.0")

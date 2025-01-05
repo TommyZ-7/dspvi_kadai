@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title>index</title>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://use.fontawesome.com/releases/v6.7.2/css/all.css" rel="stylesheet">
@@ -22,12 +24,11 @@
 
   </script>
   
-  <script type="module" src="https://esm.sh/v135/run" defer></script>
 </head>
 <body>
   <div id="app">
   </div>
-  <script type="text/babel">
+  <script type="text/babel" data-type="module">
     import React, { useEffect, useState } from "react"
     import { createRoot } from "react-dom"
     import clsx from "clsx"
@@ -54,6 +55,9 @@
       const [ isLikes, setIsLikes ] = useState([]);
       const [ nowContent, setNowContent ] = useState("");
       const COOKIE_NAME = "user_uuid";
+
+      const domainWithPort = "http://" + window.location.host;
+
 
 
       const getCookie = (name) => {
@@ -82,7 +86,7 @@
         } else {
           setUserUuid(existingCookie);
         }
-        const socket = io("http://localhost:5000");
+        const socket = io(domainWithPort);
         
         const joinData = {
           roomid: data.roomid,
@@ -116,11 +120,13 @@
               return message;
             });
           });
-          setIsLikes(prev => {
+          if (data.userid === existingCookie) {
+            setIsLikes(prev => {
             const newList = [...prev].slice().reverse();
             newList[data.index] = true;
             return newList.slice().reverse();
           });
+          }
         });
         setIsLoaded(true);
       }, []);
@@ -129,7 +135,7 @@
           alert("文字を入力してください");
           return;
         }
-        const socket = io("http://localhost:5000");
+        const socket = io(domainWithPort);
         const sendMessage = {
           text: e,
           textid: uuidv4(),
@@ -140,7 +146,7 @@
       };
       const handleLikePlus = (textid, index) => {
         
-        const socket = io("http://localhost:5000");
+        const socket = io(domainWithPort);
         const likePlusData = {
           textid: textid,
           userid: userUuid,
