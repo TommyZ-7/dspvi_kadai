@@ -21,6 +21,17 @@ def test_data():
     }
     return render_template("/test/data/page.html", data=data)
 
+@app.route('/create/')
+def create():
+    return render_template("/create/page.html")
+
+@app.route('/create/<roomid>/playarea/', methods=['GET'])
+def create_playarea(roomid):
+    returnData = {
+        "roomid" : roomid
+    }
+    return render_template("/create/playarea/page.html", roomid=returnData)
+
 @app.route("/entry/<roomid>/")
 def entry(roomid):
     try:
@@ -56,6 +67,20 @@ def playarea(roomid):
         return render_template("/entry/playarea/page.html", roomdata=returnData)
     except:
         return "404 Not Found"
+
+@app.route('/create/api/checkID', methods=['POST'])
+def checkID():
+    id = "abcdx"
+    data = str(request.data.decode('utf-8'))
+    data = JSON.loads(data)
+    print(data["id"] + " : " + id)
+    if data["id"] == id:
+        return jsonify({"status": "ok"})
+    else:
+        return jsonify({"status": "ng"})
+
+
+
 
 
 @app.route('/test/realtime/')
@@ -98,6 +123,28 @@ def on_join(joinData):
     text_db.executable.invalidate()
     text_db.executable.engine.dispose()
     text_db.close()
+    db.executable.invalidate()
+    db.executable.engine.dispose()
+    db.close()
+    emit("message_history", returnData, broadcast=False)
+
+@socketio.on('hostJoin')
+def on_host_join(joinData):
+
+    db = dataset.connect('sqlite:///chat.db')
+    room_table = db["aaa"]
+    data = []
+    isLike = []
+    for row in room_table:
+        data.append(row)
+
+    
+    print(isLike)
+    
+    returnData = {
+        "data": data,
+    }
+
     db.executable.invalidate()
     db.executable.engine.dispose()
     db.close()
@@ -159,4 +206,4 @@ def handle_like_plus(data):
     
 
 if __name__ == '__main__':
-    socketio.run(app, debug=False, host="0.0.0.0")
+    socketio.run(app, debug=True, host="0.0.0.0", ssl_context=("./certs/localhost.crt", "./certs/localhost.key"))

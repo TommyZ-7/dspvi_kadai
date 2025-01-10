@@ -4,11 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title>index</title>
-  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
-
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
   <script src="https://cdn.tailwindcss.com/3.4.16"></script>
   <link href="https://use.fontawesome.com/releases/v6.7.2/css/all.css" rel="stylesheet">
+  
   <script type="importmap">
     {
       "imports": {
@@ -21,14 +20,14 @@
         "uuid" : "https://esm.sh/uuid@11.0.4?exports=v4"
       }
     }
-
   </script>
-  
+  <script type="module" src="https://esm.sh/run" defer></script>
+
 </head>
 <body>
   <div id="app">
   </div>
-  <script type="text/babel" data-type="module">
+  <script type="text/babel" >
     import React, { useEffect, useState } from "react"
     import { createRoot } from "react-dom"
     import clsx from "clsx"
@@ -243,7 +242,7 @@
                               handleLikePlus(message.textid, index);
                             }}
                             >
-                                <i className={clsx("fa-regular fa-heart ", (isLikes.reduceRight((p, c) => [...p, c], []))[index] && "text-red-600" )} ></i>
+                            <i className={clsx("fa-regular fa-heart ", (isLikes.reduceRight((p, c) => [...p, c], []))[index] && "text-red-600" )} ></i>
                             </button>
                             <span>   {message.likes}</span>
                           </>

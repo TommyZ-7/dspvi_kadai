@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>index</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://use.fontawesome.com/releases/v6.7.2/css/all.css" rel="stylesheet">
+
+  <script type="importmap">
+    {
+      "imports": {
+        "@jsxImportSource": "https://esm.sh/react@19.0.0",
+        "react": "https://esm.sh/react@19.0.0",
+        "react-dom": "https://esm.sh/react-dom@19.0.0/client",
+        "socket.io-client": "https://esm.sh/socket.io-client@4.8.1?exports=io",
+        "clsx": "https://esm.sh/clsx",
+        "class-variance-authority": "https://esm.sh/class-variance-authority"
+      }
+    }
+
+  </script>
+  <script type="module" src="https://esm.sh/run" defer></script>
+
+  
+  
+ 
+</head>
+<body>
+  <div id="app"></div>
+  <script type="text/babel">
+    import React, { useEffect, useState } from "react"
+    import { createRoot } from "react-dom"
+    import clsx from "clsx"
+    import { cva } from "class-variance-authority"
+    import { io } from "socket.io-client"
+
+
+
+    const App = () => {
+
+      const url = window.location.href
+      const [ id , setId ] = useState("");
+      const [ checked, setChecked ] = useState(false);
+      const [ name , setName ] = useState("");
+      const [ comment , setComment ] = useState("");
+
+      const [ users , setUsers ] = useState("3434");
+      const [ questions , setQuestions ] = useState("34");
+      const [ replied , setReplied ] = useState("2");
+
+      const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+      const [activeItem, setActiveItem] = useState('home');
+
+      const [ messages, setMessages ] = useState([{
+        text: "Loading...", 
+        textid: "Loading...",
+        userid: "Loading...",
+        likes: 0,
+        isAnswerd: false
+      }]);
+
+      const menuItems = [
+        { id: 'home', icon: "fa-solid fa-house", label: 'ホーム' },
+        { id: 'analytics', icon: "fa-regular fa-comments", label: '質問' },
+      ];
+      const statItems = [
+        { id: 'users', icon: "fa-solid fa-user", label: '参加者数', value: users },
+        { id: 'questions', icon: "fa-solid fa-comment", label: '質問数', value: questions },
+        { id: 'response', icon: "fa-solid fa-reply", label: '回答数', value: replied },
+      ]
+
+      const domainWithPort = "https://" + window.location.host;
+
+      useEffect(() => {
+        const socket = io(domainWithPort);
+        const joinData = {
+          roomid: "aaa",
+        }
+        socket.emit("hostJoin", joinData);
+
+        socket.on("message_history", (data) => {
+          setMessages(data.data);
+
+        });
+
+        socket.on("new_message", (data) => {
+          setMessages((prev) => {
+            return [...prev, message];
+          });
+        });
+
+      }, []);
+
+      const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+      };
+
+      const mainContent = () => {
+        switch (activeItem) {
+          case 'home':
+            return (
+              <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {statItems.map((item, index) => (
+                    <div
+                      key={index}
+                      className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300"
+                    >
+                      <i class={`w-8 h-8 text-blue-500 ${item.icon}`}></i>
+                      <span className="text-lg font-semibold text-gray-800 mb-4">{item.label}</span>
+                      <p className="text-gray-600 text-center text-6xl font-bold">
+                        
+                        {item.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <div className="divider"></div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-lg shadow-sm p-6">
+                    <h1 className="text-2xl font-bold text-gray-800">最新の質問</h1>
+                    <div className="divider"></div>
+
+                    {(messages.reduceRight((p, c) => [...p, c], [])).map((message, index) => (
+                    <div key={index}>
+                      <div className="m-3" >
+                        <p>{message.text}</p>
+                        <br/>
+                        
+                      </div>
+                      <div className="divider"></div>
+                    </div>
+                  ))}
+                  </div>
+                  <div className="bg-white rounded-lg shadow-sm p-6">
+                    <h1 className="text-2xl font-bold text-gray-800">ハート数が多い回答</h1>
+                    <p className="mt-4 text-gray-600">ここに最新の回答が表示されます。</p>
+                  </div>
+                  
+                </div>
+
+                </>
+            );
+          case 'analytics':
+            return (
+              <div>
+                aaa
+              </div>
+            );
+          default:
+            return (
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">ホーム</h1>
+                <p className="mt-4 text-gray-600">ここはホームです。</p>
+              </div>
+            );
+        }
+      }
+
+      return (
+        <>
+          <div className="flex h-screen bg-gray-100">
+            {/* Sidebar */}
+            <div 
+              className={`fixed inset-y-0 left-0 z-30 bg-white shadow-lg transition-all duration-300 ease-in-out ${
+                isSidebarOpen ? 'w-64' : 'w-16'
+              }`}
+            >
+              <div className="flex items-center justify-between h-16 px-4 border-b">
+                <h1 className={`text-xl font-bold text-gray-800 transition-opacity duration-300 ${
+                  isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0'
+                }`}>
+                  Dashboard
+                </h1>
+                <button 
+                  onClick={toggleSidebar} 
+                  className={`p-2 rounded-lg hover:bg-gray-100 transition-transform duration-300 ${
+                    !isSidebarOpen && 'transform rotate-180'
+                  }`}
+                >
+                  <i class="fa-solid fa-chevron-left"></i>               
+                </button>
+              </div>
+
+              <nav className="mt-4">
+                {menuItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveItem(item.id)}
+                    className={`flex items-center w-full px-4 py-3 transition-all duration-200 relative group ${
+                      activeItem === item.id
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <i class={`w-5 h-5 min-w-[20px] ${item.icon}`}></i>
+                    <span 
+                      className={`ml-3 font-medium whitespace-nowrap transition-all duration-300 ${
+                        isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0'
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                    {/* Tooltip for collapsed state */}
+                    {!isSidebarOpen && (
+                      <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap">
+                        {item.label}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {/* Main Content */}
+            <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-16'}`}>
+              {/* Header */}
+              <header className="fixed top-0 right-0 z-20 flex items-center justify-end h-16 px-4 bg-white shadow-sm w-full">
+                <div className="flex items-center space-x-4">
+                  <p className="text-2xl">DSPX</p>
+                  <button className="p-2 rounded-lg hover:bg-gray-100 relative">
+                    <i class="fa-regular fa-bell"></i>                    
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                  </button>
+                  <div className="w-8 h-8 rounded-full bg-blue-500"></div>
+                </div>
+              </header>
+
+              {/* Main Content Area */}
+              <main className="p-6 mt-16">
+                {mainContent()}
+              </main>
+            </div>
+          </div>
+        
+        </>
+      );
+    };
+    const container = document.getElementById("app");
+    const root = createRoot(container);
+    root.render(<App />);
+  </script>
+</body>
+</html>

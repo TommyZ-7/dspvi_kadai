@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>index</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "@jsxImportSource": "https://esm.sh/react@19.0.0",
+        "react": "https://esm.sh/react@19.0.0",
+        "react-dom": "https://esm.sh/react-dom@19.0.0/client",
+        "clsx": "https://esm.sh/clsx",
+        "class-variance-authority": "https://esm.sh/class-variance-authority"
+      }
+    }
+
+  </script>
+  <script type="module" src="https://esm.sh/run" defer></script>
+
+  
+  
+ 
+</head>
+<body>
+  <div id="app"></div>
+  <script type="text/babel">
+    import React, { useEffect, useState } from "react"
+    import { createRoot } from "react-dom"
+    import clsx from "clsx"
+    import { cva } from "class-variance-authority"
+
+    const App = () => {
+      const url = window.location.href
+      const [ id , setId ] = useState("");
+      const [ checked, setChecked ] = useState(false);
+      const [ name , setName ] = useState("");
+      const [ comment , setComment ] = useState("");
+
+      const idCheck = () => {
+        fetch(url + "api/checkID" , {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: id }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if(data.status == "ok"){
+              setChecked(true);
+            }else{
+              alert("IDが間違っています。\n5回間違えるとアクセスが制限されます。");
+            }})
+          .catch((err) => {
+            console.log(err);
+          });
+      }
+
+      if (checked) {
+        return (
+          <div
+          className="items-center justify-center h-screen"
+          >
+            <p>授業名</p>
+            <input type="text" placeholder="Type here" className="input input-bordered w-full max-w-xs" onChange={(e) => setName(e.target.value)} />
+            <p>説明</p>
+            <textarea className="textarea h-24 textarea-bordered" placeholder="Type here" onChange={(e) => setComment(e.target.value)}></textarea>
+          </div>
+        );
+      }
+
+      return (
+        <>
+        <div
+        
+        className="flex items-center justify-center h-screen"
+        >  
+          <input type="text" onChange={(e) => setId(e.target.value)} />
+          <br />
+          <button 
+          className="btn btn-primary"
+          onClick={() => {
+            idCheck();
+          }}
+          >
+          送信
+          </button>
+        </div>
+        </>
+      );
+    };
+    const container = document.getElementById("app");
+    const root = createRoot(container);
+    root.render(<App />);
+  </script>
+</body>
+</html>
