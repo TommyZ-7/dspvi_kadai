@@ -56,7 +56,8 @@ def create_playarea(roomid):
         "comment": roomdata["comment"],
         "nowAnswering": roomdata["nowAnswering"],
         "nowAnsweringTextid": roomdata["nowAnsweringTextid"],
-        "api_key": API_KEY
+        "api_key": API_KEY,
+        "answerdCount": roomdata["answerdCount"]
     }
     return render_template("/create/playarea/page.html", roomdata=returnData)
 
@@ -117,7 +118,7 @@ def create_room():
         db = dataset.connect('sqlite:///chat.db')
         room_table = db['room']
         room_uuid = "tbl-" + str(uuid.uuid4())
-        room_table.insert(dict(roomid= room_uuid, name=data["name"], comment=data["comment"], nowAnswering="", nowAnsweringTextid=""))
+        room_table.insert(dict(roomid= room_uuid, name=data["name"], comment=data["comment"], nowAnswering="", nowAnsweringTextid="", answerdCount=0))
         db.executable.invalidate()
         db.executable.engine.dispose()
         db.close()
@@ -162,6 +163,8 @@ def answercompleted():
         room_table = db['room']
         roomdata = room_table.find_one(roomid=data["roomid"])
         roomdata["nowAnswering"] = ""
+        roomdata["nowAnsweringTextid"] = ""
+        roomdata["answerdCount"] += 1
         room_table.update(roomdata, ['roomid'])
         table = db[data["roomid"]]
         chatdata = table.find_one(textid=data["textid"])
@@ -273,10 +276,7 @@ def handle_like_plus(data):
     print('received userid: ' + data["userid"])
     text_db = dataset.connect('sqlite:///textid.db')
     text_table = text_db[data["textid"]]
-    #text_tableにtextidが存在するか確認
     
-
-
     if text_table.find_one(userid=data["userid"]) == None:
         text_table.insert(dict(userid=data["userid"]))
         db = dataset.connect('sqlite:///chat.db')

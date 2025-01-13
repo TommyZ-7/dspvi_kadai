@@ -57,7 +57,7 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
 
       const [ users , setUsers ] = useState("Loading...");
       const [ questions , setQuestions ] = useState("Loading...");
-      const [ replied , setReplied ] = useState("Loading...");
+      const [ answerdCount , setAnswerdCount ] = useState("Loading...");
 
       const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       const [activeItem, setActiveItem] = useState('home');
@@ -79,7 +79,7 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
       const statItems = [
         { id: 'users', icon: "fa-solid fa-user", label: '参加者数', value: users },
         { id: 'questions', icon: "fa-solid fa-comment", label: '質問数', value: questions },
-        { id: 'response', icon: "fa-solid fa-reply", label: '回答数', value: replied },
+        { id: 'response', icon: "fa-solid fa-reply", label: '回答数', value: answerdCount },
       ]
 
       const domainWithPort = "http://" + window.location.host;
@@ -88,6 +88,7 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
         if (isLoading) {
           setAnswering(data.nowAnswering);
           setAnsweringID(data.nowAnsweringTextid);
+          setAnswerdCount(data.answerdCount);
           setIsLoading(false);
         }
 
@@ -127,6 +128,9 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
           } else if (data.status == "end") {
             setAnsweringID("");
             setAnswering("");
+            setAnswerdCount((prev) => {
+              return prev + 1;
+            });
             console.log(data.textid);
             setMessages((prev) => {
               return prev.map((message) => {
@@ -228,11 +232,10 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
                     <h1 className="text-2xl font-bold text-gray-800">最新の質問</h1>
                     <div className="divider"></div>
 
-                    {(messages.reduceRight((p, c) => [...p, c], [])).slice(0,3).map((message, index) => (
+                    {(messages.reduceRight((p, c) => [...p, c], [])).slice(0,4).map((message, index) => (
                     <div key={index}>
                       <div className="m-3" >
                         <p>{message.text}</p>
-                        <br/>
                         
                       </div>
                       <div className="divider"></div>
@@ -246,7 +249,6 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
                       <div key={index}>
                         <div className="m-3" >
                           <p>{message.text}</p>
-                          <br/>
                           <p>{message.likes}</p>
                           
                         </div>
@@ -342,7 +344,7 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
             {/* Sidebar */}
             <div 
               className={`fixed inset-y-0 left-0 z-30 bg-white shadow-lg transition-all duration-300 ease-in-out ${
-                isSidebarOpen ? 'w-64' : 'w-16'
+                isSidebarOpen ? 'w-48' : 'w-16'
               }`}
             >
               <div className="flex items-center justify-between h-16 px-4 border-b">
@@ -392,7 +394,7 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
             </div>
 
             {/* Main Content */}
-            <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-16'}`}>
+            <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-48' : 'ml-16'}`}>
               {/* Header */}
               <header className="fixed top-0 right-0 z-20 flex items-center justify-end h-16 px-4 bg-white shadow-sm w-full">
                 <div className="flex items-center space-x-4">
