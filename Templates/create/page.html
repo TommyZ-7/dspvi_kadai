@@ -41,6 +41,9 @@
       const [ checked, setChecked ] = useState(false);
       const [ name , setName ] = useState("");
       const [ comment , setComment ] = useState("");
+      const [ api_key , setApi_key ] = useState("");
+
+      const domainWithPort = "http://" + window.location.host;
 
       const idCheck = () => {
         fetch(url + "api/checkID" , {
@@ -55,8 +58,29 @@
             if(data.status == "ok"){
               setChecked(true);
               console.log(data.api_key);
+              setApi_key(data.api_key);
             }else{
               alert("IDが間違っています。\n5回間違えるとアクセスが制限されます。");
+            }})
+          .catch((err) => {
+            console.log(err);
+          });
+      }
+
+      const createClass = () => {
+        fetch(domainWithPort + "/api/createroom" , {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: id , name: name , comment: comment , api_key: api_key }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if(data.status == "ok"){
+              window.location.href = "/create/" + data.roomid + "/playarea?api_key=" + api_key;
+            }else{
+              alert("エラーが発生しました。");
             }})
           .catch((err) => {
             console.log(err);
@@ -72,6 +96,13 @@
             <input type="text" placeholder="Type here" className="input input-bordered w-full max-w-xs" onChange={(e) => setName(e.target.value)} />
             <p>説明</p>
             <textarea className="textarea h-24 textarea-bordered" placeholder="Type here" onChange={(e) => setComment(e.target.value)}></textarea>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                createClass();
+              }}
+            >送信
+            </button>
           </div>
         );
       }

@@ -104,6 +104,18 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
             return prev + 1;
           }); 
         });
+        socket.on("like_plus_return/" + data.roomid , (data) => {
+          console.log(data);
+          setMessages((prev) => {
+            return prev.map((message) => {
+              if (message.textid === data.textid) {
+                return { ...message, likes: message.likes + 1 };
+              } else {
+                return message;
+              }
+            });
+          });
+        });
 
       }, []);
 
@@ -150,7 +162,18 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
                   </div>
                   <div className="bg-white rounded-lg shadow-sm p-6">
                     <h1 className="text-2xl font-bold text-gray-800">ハート数が多い回答</h1>
-                    <p className="mt-4 text-gray-600">ここに最新の回答が表示されます。</p>
+                    <div className="divider"></div>
+                    {[...messages].sort((a, b) => b.likes - a.likes).slice(0,3).map((message, index) => (
+                      <div key={index}>
+                        <div className="m-3" >
+                          <p>{message.text}</p>
+                          <br/>
+                          <p>{message.likes}</p>
+                          
+                        </div>
+                        <div className="divider"></div>
+                      </div>
+                    ))}
                   </div>
                   
                 </div>
@@ -223,7 +246,7 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
 
       return (
         <>
-          <div className="flex h-screen bg-gray-100">
+          <div className="flex bg-gray-100">
             {/* Sidebar */}
             <div 
               className={`fixed inset-y-0 left-0 z-30 bg-white shadow-lg transition-all duration-300 ease-in-out ${

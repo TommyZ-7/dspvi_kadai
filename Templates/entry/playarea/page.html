@@ -116,7 +116,7 @@
             });
             console.log(isLikes);
           });
-          socket.on("like_plus_return", (data) => {
+          socket.on("like_plus_return/" + data.roomid, (data) => {
             setMessages((prev) => {
               return prev.map((message) => {
                 if (message.textid === data.textid) {

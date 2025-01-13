@@ -30,8 +30,15 @@ def test_data():
 def create():
     return render_template("/create/page.html")
 
-@app.route('/create/<roomid>/playarea/', methods=['GET'])
+@app.route('/create/<roomid>/playarea', methods=['GET'])
 def create_playarea(roomid):
+    try:
+        key = request.args.get('api_key', default=None, type=str)
+        key = key.format(key)
+        if key != str(API_KEY):
+            return "invalid apiKey"
+    except:
+        return "invalid apiKey"
     db = dataset.connect('sqlite:///chat.db')
     room_table = db['room']
     roomdata = room_table.find_one(roomid=roomid)
@@ -43,9 +50,6 @@ def create_playarea(roomid):
         "name": roomdata["name"],
         "comment": roomdata["comment"],
     }
-
-    
-
     return render_template("/create/playarea/page.html", roomdata=returnData)
 
 @app.route("/entry/<roomid>/")
@@ -95,7 +99,21 @@ def checkID():
         return jsonify({"status": "ng"})
 
 
-
+@app.route('/api/createroom', methods=['POST'])
+def create_room():
+    data = str(request.data.decode('utf-8'))
+    data = JSON.loads(data)
+    if data["api_key"] == str(API_KEY):
+        db = dataset.connect('sqlite:///chat.db')
+        room_table = db['room']
+        room_uuid = "tbl-" + str(uuid.uuid4())
+        room_table.insert(dict(roomid= room_uuid, name=data["name"], comment=data["comment"]))
+        db.executable.invalidate()
+        db.executable.engine.dispose()
+        db.close()
+        return jsonify({ "status": "ok", "roomid": room_uuid })
+    else:
+        return jsonify({"status": "ng"})
 
 
 @app.route('/test/realtime/')
@@ -215,7 +233,7 @@ def handle_like_plus(data):
             "userid": data["userid"],
             "index" : data["index"]
         }
-        emit("like_plus_return", returnData, broadcast=True)
+        emit("like_plus_return/" + data["roomid"], returnData, broadcast=True)
     else:
         pass
 
