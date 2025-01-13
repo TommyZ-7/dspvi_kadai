@@ -44,24 +44,27 @@ def create_playarea(roomid):
             return "invalid apiKey"
     except:
         return "invalid apiKey"
-    db = dataset.connect('sqlite:///chat.db')
-    room_table = db['room']
-    roomdata = room_table.find_one(roomid=roomid)
-    users = len(roomdata["joinedUser"])
-    db.executable.invalidate()
-    db.executable.engine.dispose()
-    db.close()
-    returnData = {
-        "roomid": roomid,
-        "name": roomdata["name"],
-        "comment": roomdata["comment"],
-        "nowAnswering": roomdata["nowAnswering"],
-        "nowAnsweringTextid": roomdata["nowAnsweringTextid"],
-        "api_key": API_KEY,
-        "answerdCount": roomdata["answerdCount"],
-        "users": users
-    }
-    return render_template("/create/playarea/page.html", roomdata=returnData)
+    try:
+        db = dataset.connect('sqlite:///chat.db')
+        room_table = db['room']
+        roomdata = room_table.find_one(roomid=roomid)
+        users = len(roomdata["joinedUser"])
+        db.executable.invalidate()
+        db.executable.engine.dispose()
+        db.close()
+        returnData = {
+            "roomid": roomid,
+            "name": roomdata["name"],
+            "comment": roomdata["comment"],
+            "nowAnswering": roomdata["nowAnswering"],
+            "nowAnsweringTextid": roomdata["nowAnsweringTextid"],
+            "api_key": API_KEY,
+            "answerdCount": roomdata["answerdCount"],
+            "users": users
+        }
+        return render_template("/create/playarea/page.html", roomdata=returnData)
+    except:
+        return "404 Not Found"
 
 @app.route("/entry/<roomid>/")
 def entry(roomid):
