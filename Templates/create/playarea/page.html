@@ -52,6 +52,8 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
       const [ checked, setChecked ] = useState(false);
       const [ name , setName ] = useState("");
       const [ comment , setComment ] = useState("");
+      const [answering , setAnswering] = useState("");
+      const [answeringID , setAnsweringID] = useState("");
 
       const [ users , setUsers ] = useState("Loading...");
       const [ questions , setQuestions ] = useState("Loading...");
@@ -59,6 +61,7 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
 
       const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       const [activeItem, setActiveItem] = useState('home');
+      const [ isLoading, setIsLoading ] = useState(true);
 
       const [ messages, setMessages ] = useState([{
         text: "Loading...", 
@@ -82,6 +85,13 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
       const domainWithPort = "http://" + window.location.host;
 
       useEffect(() => {
+        if (isLoading) {
+          setAnswering(data.nowAnswering);
+          setAnsweringID(data.nowAnsweringTextid);
+          setIsLoading(false);
+        }
+
+
         const socket = io(domainWithPort);
         const joinData = {
           roomid: data.roomid,
@@ -104,6 +114,36 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
             return prev + 1;
           }); 
         });
+        socket.on("new_user/" + data.roomid, (data) => {
+          setUsers((prev) => {
+            return prev + 1;
+          });
+        });
+
+        socket.on("answering/" + data.roomid, (data) => {
+          if (data.status == "start") {
+            setAnswering(data.text);
+            setAnsweringID(data.textid);
+          } else if (data.status == "end") {
+            setAnsweringID("");
+            setAnswering("");
+            console.log(data.textid);
+            setMessages((prev) => {
+              return prev.map((message) => {
+                if (message.textid === data.textid) {
+                  return {
+                    ...message,
+                    isAnswerd: true
+                  }
+                }
+                return message;
+              });
+            });
+          } else {
+            console.log("error");
+          }
+        });
+
         socket.on("like_plus_return/" + data.roomid , (data) => {
           console.log(data);
           setMessages((prev) => {
@@ -122,6 +162,45 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
       const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
       };
+      const selectAnswer = (text , textid) => {
+        
+        fetch(domainWithPort + "/api/answering" , {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: text, textid: textid , api_key: data.api_key, roomid: data.roomid }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if(data.status == "ok"){
+              console.log("ok");
+            }else{
+              alert("エラーが発生しました。");
+            }})
+          .catch((err) => {
+            console.log(err);
+          });
+      }
+      const answerCompleted = (textid) => {
+        fetch(domainWithPort + "/api/answercompleted" , {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ textid: answeringID , api_key: data.api_key, roomid: data.roomid }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if(data.status == "ok"){
+              console.log("ok");
+            }else{
+              alert("エラーが発生しました。");
+            }})
+          .catch((err) => {
+            console.log(err);
+          });
+      }
 
       const mainContent = () => {
         switch (activeItem) {
@@ -188,8 +267,7 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
                 <div className="card bg-base-100 w-full shadow-xl p-3">
                 <div className="card-body">
                   <h2 className="card-title">現在の内容</h2>
-                  <p>nowContent</p>
-                  <p>userUuid</p>
+                  <p>{answering}</p>
 
                 </div>
               </div>
@@ -198,9 +276,11 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
               <br/>
               <button
                 className="w-full bg-indigo-400 rounded-lg p-2 text-black"
-                
+                onClick={() => {
+                  answerCompleted(data.nowAnsweringId);
+                }}
               >
-                送信={'>'}
+                解答済みにする
               </button>
               </div>
               {/* Chat */}
@@ -211,7 +291,19 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
                     <div className="m-3" >
                       <p>{message.text}</p>
                       <br/>
-                      
+                      {message.isAnswerd ? (
+                          <button
+                          className="bg-red-200 rounded-lg p-2 text-black btn-disabled"
+                          >解答済み</button>
+                        ) : (
+                          <button
+                          className="bg-red-400 rounded-lg p-2 text-black"
+                          onClick={() => {
+                            selectAnswer(message.text, message.textid);
+                          }}  
+                          >回答</button>
+                        )}
+
                     </div>
                     <div className="divider"></div>
                   </div>

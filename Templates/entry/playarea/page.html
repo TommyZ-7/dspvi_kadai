@@ -59,9 +59,12 @@
         const [ userUuid , setUserUuid ] = useState("");
         const [ inputText , setInputText ] = useState("");
         const [ isLoaded, setIsLoaded ] = useState(false);
+        const [ isLoading, setIsLoading ] = useState(true);
         const [ cookieValue, setCookieValue ] = useState("");
         const [ isLikes, setIsLikes ] = useState([]);
-        const [ nowContent, setNowContent ] = useState("");
+        const [ answering, setAnswering ] = useState("");
+        const [answeringID , setAnsweringID] = useState("");
+
         const COOKIE_NAME = "user_uuid";
 
         const domainWithPort = "http://" + window.location.host;
@@ -88,6 +91,11 @@
         }
 
         useEffect(() => {
+          if (isLoading) {
+            setAnswering(data.nowAnswering);
+            setAnsweringID(data.nowAnsweringTextid);
+            setIsLoading(false);
+          }
           const existingCookie = getCookie(COOKIE_NAME);
           if (existingCookie === "") {
             setCookie(COOKIE_NAME , uuidv4());
@@ -115,6 +123,29 @@
               return [...prev, false];
             });
             console.log(isLikes);
+          });
+          socket.on("answering/" + data.roomid, (data) => {
+            if (data.status == "start") {
+              setAnswering(data.text);
+              setAnsweringID(data.textid);
+            } else if (data.status == "end") {
+              setAnsweringID("");
+              setAnswering("");
+              console.log(data.textid);
+              setMessages((prev) => {
+                return prev.map((message) => {
+                  if (message.textid === data.textid) {
+                    return {
+                      ...message,
+                      isAnswerd: true
+                    }
+                  }
+                  return message;
+                });
+              });
+            } else {
+              console.log("error");
+            }
           });
           socket.on("like_plus_return/" + data.roomid, (data) => {
             setMessages((prev) => {
@@ -207,8 +238,7 @@
                     <div className="card bg-base-100 w-full shadow-xl p-3">
                     <div className="card-body">
                       <h2 className="card-title">現在の内容</h2>
-                      <p>{nowContent}</p>
-                      <p>{userUuid}</p>
+                      <p>{answering}</p>
 
                     </div>
                   </div>
@@ -234,7 +264,7 @@
                   {/* Chat */}
                   <div className="m-4 h-screen overflow-y-auto">
                     <div className="divider">Chat</div>
-                    {(messages.reduceRight((p, c) => [...p, c], [])).map((message, index) => (
+                    {(messages.reduceRight((p, c) => [...p, c], [])).filter(message => !message.isAnswerd).map((message, index) => (
                       <div key={index}>
                         <div className="m-3" >
                           <p>{message.text}</p>

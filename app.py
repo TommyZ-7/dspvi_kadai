@@ -1,5 +1,5 @@
 from flask import Flask, render_template , request, jsonify
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, send
 import dataset
 import json as JSON
 import uuid
@@ -10,7 +10,12 @@ app = Flask(__name__)
 socketio = SocketIO(app)
 
 ACCESS_TOKEN = "abcdx"
-API_KEY = uuid.uuid4()
+DEBUG = True
+if DEBUG:
+    API_KEY = "a"
+else:
+    API_KEY = uuid.uuid4()
+    
 
 
 
@@ -49,6 +54,9 @@ def create_playarea(roomid):
         "roomid": roomid,
         "name": roomdata["name"],
         "comment": roomdata["comment"],
+        "nowAnswering": roomdata["nowAnswering"],
+        "nowAnsweringTextid": roomdata["nowAnsweringTextid"],
+        "api_key": API_KEY
     }
     return render_template("/create/playarea/page.html", roomdata=returnData)
 
@@ -83,6 +91,8 @@ def playarea(roomid):
             "roomid": roomid,
             "name": roomdata["name"],
             "comment": roomdata["comment"],
+            "nowAnswering": roomdata["nowAnswering"],
+            "nowAnsweringTextid": roomdata["nowAnsweringTextid"],
         }
         return render_template("/entry/playarea/page.html", roomdata=returnData)
     except:
@@ -107,13 +117,66 @@ def create_room():
         db = dataset.connect('sqlite:///chat.db')
         room_table = db['room']
         room_uuid = "tbl-" + str(uuid.uuid4())
-        room_table.insert(dict(roomid= room_uuid, name=data["name"], comment=data["comment"]))
+        room_table.insert(dict(roomid= room_uuid, name=data["name"], comment=data["comment"], nowAnswering="", nowAnsweringTextid=""))
         db.executable.invalidate()
         db.executable.engine.dispose()
         db.close()
         return jsonify({ "status": "ok", "roomid": room_uuid })
     else:
         return jsonify({"status": "ng"})
+
+@app.route('/api/answering', methods=['POST'])
+def answering():
+    data = str(request.data.decode('utf-8'))
+    data = JSON.loads(data)
+    if data["api_key"] == str(API_KEY):
+        emitData = {
+            "text": data["text"],
+            "status": "start",
+            "textid" : data["textid"]
+        }
+        db = dataset.connect('sqlite:///chat.db')
+        room_table = db['room']
+        roomdata = room_table.find_one(roomid=data["roomid"])
+        roomdata["nowAnswering"] = data["text"]
+        roomdata["nowAnsweringTextid"] = data["textid"]
+        room_table.update(roomdata, ['roomid'])
+        db.executable.invalidate()
+        db.executable.engine.dispose()
+        db.close()
+        emit("answering/" + data["roomid"], emitData, broadcast=True, namespace=None)
+        return jsonify({"status": "ok"})
+    else:
+        return jsonify({"status": "invalid api_key"})
+    
+@app.route('/api/answercompleted', methods=['POST'])
+def answercompleted():
+    data = str(request.data.decode('utf-8'))
+    data = JSON.loads(data)
+    if data["api_key"] == str(API_KEY):
+        emitData = {
+            "status": "end",
+            "textid": data["textid"]
+        }
+        db = dataset.connect('sqlite:///chat.db')
+        room_table = db['room']
+        roomdata = room_table.find_one(roomid=data["roomid"])
+        roomdata["nowAnswering"] = ""
+        room_table.update(roomdata, ['roomid'])
+        table = db[data["roomid"]]
+        chatdata = table.find_one(textid=data["textid"])
+        chatdata["isAnswerd"] = True    
+        table.update(chatdata, ['textid'])
+        db.executable.invalidate()
+        db.executable.engine.dispose()
+        db.close()
+        
+        emit("answering/" + data["roomid"], emitData, broadcast=True, namespace=None)
+        return jsonify({"status": "ok"})
+    else:
+        return jsonify({"status": "invalid api_key"})
+    
+
 
 
 @app.route('/test/realtime/')
@@ -202,7 +265,6 @@ def handle_message(message, roomid):
     
     returnData = { "text": message["text"], "textid": message["textid"], "userid": message["userid"], "likes": 0, "isAnswerd": False }
     emit("new_message/" + roomid, returnData, broadcast=True)
-    emit
 
 @socketio.on('like_plus')
 def handle_like_plus(data):
