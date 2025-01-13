@@ -6,7 +6,10 @@
   <title>index</title>
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
   <script src="https://cdn.tailwindcss.com"></script>
-
+  <script src="
+  https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
+  "></script>
+  
   <script type="importmap">
     {
       "imports": {
@@ -19,7 +22,6 @@
     }
 
   </script>
-  <script type="module" src="https://esm.sh/run" defer></script>
 
   
   
@@ -27,7 +29,7 @@
 </head>
 <body>
   <div id="app"></div>
-  <script type="text/babel">
+  <script type="text/babel" data-type="module">
     import React, { useEffect, useState } from "react"
     import { createRoot } from "react-dom"
     import clsx from "clsx"
@@ -52,6 +54,7 @@
           .then((data) => {
             if(data.status == "ok"){
               setChecked(true);
+              console.log(data.api_key);
             }else{
               alert("IDが間違っています。\n5回間違えるとアクセスが制限されます。");
             }})

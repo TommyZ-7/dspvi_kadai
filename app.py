@@ -2,11 +2,16 @@ from flask import Flask, render_template , request, jsonify
 from flask_socketio import SocketIO, emit
 import dataset
 import json as JSON
+import uuid
 
 global messages
 
 app = Flask(__name__)
 socketio = SocketIO(app)
+
+ACCESS_TOKEN = "abcdx"
+API_KEY = uuid.uuid4()
+
 
 
 @app.route('/')
@@ -27,10 +32,21 @@ def create():
 
 @app.route('/create/<roomid>/playarea/', methods=['GET'])
 def create_playarea(roomid):
+    db = dataset.connect('sqlite:///chat.db')
+    room_table = db['room']
+    roomdata = room_table.find_one(roomid=roomid)
+    db.executable.invalidate()
+    db.executable.engine.dispose()
+    db.close()
     returnData = {
-        "roomid" : roomid
+        "roomid": roomid,
+        "name": roomdata["name"],
+        "comment": roomdata["comment"],
     }
-    return render_template("/create/playarea/page.html", roomid=returnData)
+
+    
+
+    return render_template("/create/playarea/page.html", roomdata=returnData)
 
 @app.route("/entry/<roomid>/")
 def entry(roomid):
@@ -70,12 +86,11 @@ def playarea(roomid):
 
 @app.route('/create/api/checkID', methods=['POST'])
 def checkID():
-    id = "abcdx"
+
     data = str(request.data.decode('utf-8'))
     data = JSON.loads(data)
-    print(data["id"] + " : " + id)
-    if data["id"] == id:
-        return jsonify({"status": "ok"})
+    if data["id"] == ACCESS_TOKEN:
+        return jsonify({"status": "ok", "api_key": API_KEY})
     else:
         return jsonify({"status": "ng"})
 
@@ -126,13 +141,13 @@ def on_join(joinData):
     db.executable.invalidate()
     db.executable.engine.dispose()
     db.close()
-    emit("message_history", returnData, broadcast=False)
+    emit("message_history/" + joinData["roomid"], returnData, broadcast=False)
 
 @socketio.on('hostJoin')
 def on_host_join(joinData):
 
     db = dataset.connect('sqlite:///chat.db')
-    room_table = db["aaa"]
+    room_table = db[joinData["roomid"]]
     data = []
     isLike = []
     for row in room_table:
@@ -148,7 +163,7 @@ def on_host_join(joinData):
     db.executable.invalidate()
     db.executable.engine.dispose()
     db.close()
-    emit("message_history", returnData, broadcast=False)
+    emit("message_history/" + joinData["roomid"], returnData, broadcast=False)
 
 @socketio.on('message')
 def handle_message(message, roomid):
@@ -168,7 +183,8 @@ def handle_message(message, roomid):
     text_db.close()
     
     returnData = { "text": message["text"], "textid": message["textid"], "userid": message["userid"], "likes": 0, "isAnswerd": False }
-    emit("new_message", returnData, broadcast=True)
+    emit("new_message/" + roomid, returnData, broadcast=True)
+    emit
 
 @socketio.on('like_plus')
 def handle_like_plus(data):
@@ -206,4 +222,4 @@ def handle_like_plus(data):
     
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host="0.0.0.0", ssl_context=("./certs/localhost.crt", "./certs/localhost.key"))
+    socketio.run(app, debug=False, host="0.0.0.0")

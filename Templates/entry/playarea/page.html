@@ -1,274 +1,283 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width">
-  <title>index</title>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-  <link href="https://use.fontawesome.com/releases/v6.7.2/css/all.css" rel="stylesheet">
-  
-  <script type="importmap">
-    {
-      "imports": {
-        "@jsxImportSource": "https://esm.sh/react@19.0.0",
-        "react": "https://esm.sh/react@19.0.0",
-        "react-dom": "https://esm.sh/react-dom@19.0.0/client?exports=createRoot",
-        "socket.io-client": "https://esm.sh/socket.io-client@4.8.1?exports=io",
-        "clsx": "https://esm.sh/clsx@2.1.1",
-        "class-variance-authority": "https://esm.sh/class-variance-authority@0.7.1?exports=cva",
-        "uuid" : "https://esm.sh/uuid@11.0.4?exports=v4"
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>index</title>
+    <script src="
+    https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
+    "></script>
+    
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link
+      href="https://use.fontawesome.com/releases/v6.7.2/css/all.css"
+      rel="stylesheet"
+    />
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@jsxImportSource": "https://esm.sh/react@19.0.0",
+          "react": "https://esm.sh/react@19.0.0",
+          "react-dom": "https://esm.sh/react-dom@19.0.0/client?exports=createRoot",
+          "socket.io-client": "https://esm.sh/socket.io-client@4.8.1?exports=io",
+          "clsx": "https://esm.sh/clsx@2.1.1",
+          "class-variance-authority": "https://esm.sh/class-variance-authority@0.7.1?exports=cva",
+          "uuid": "https://esm.sh/uuid@11.0.4?exports=v4"
+        }
       }
-    }
-  </script>
-  <script type="module" src="https://esm.sh/run" defer></script>
-
-</head>
-<body>
-  <div id="app">
-  </div>
-  <script type="text/babel" >
-    import React, { useEffect, useState } from "react"
-    import { createRoot } from "react-dom"
-    import clsx from "clsx"
-    import { cva } from "class-variance-authority"
-    import { io } from "socket.io-client"
-    import { v4 as uuidv4 } from "uuid"
-    
-    
-
-    const App = () => {
-      const data = {{ roomdata | tojson | safe }};
-
-      const [ messages, setMessages ] = useState([{
-        text: "Loading...", 
-        textid: "Loading...",
-        userid: "Loading...",
-        likes: 0,
-        isAnswerd: false
-      }]);
-      const [ userUuid , setUserUuid ] = useState("");
-      const [ inputText , setInputText ] = useState("");
-      const [ isLoaded, setIsLoaded ] = useState(false);
-      const [ cookieValue, setCookieValue ] = useState("");
-      const [ isLikes, setIsLikes ] = useState([]);
-      const [ nowContent, setNowContent ] = useState("");
-      const COOKIE_NAME = "user_uuid";
-
-      const domainWithPort = "http://" + window.location.host;
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="text/babel" data-type="module">
+      import React, { useEffect, useState } from "react"
+      import { createRoot } from "react-dom"
+      import clsx from "clsx"
+      import { cva } from "class-variance-authority"
+      import { io } from "socket.io-client"
+      import { v4 as uuidv4 } from "uuid"
 
 
 
-      const getCookie = (name) => {
-        const cookies = document.cookie.split(";");
-        for (let cookie of cookies) {
-          const [cookieName, cookieValue] = cookie.split("=").map((c) => c.trim());
-          if (cookieName === name) {
-            return cookieValue;
+      const App = () => {
+        const data = {{ roomdata | tojson | safe }};
+
+        const [ messages, setMessages ] = useState([{
+          text: "Loading...",
+          textid: "Loading...",
+          userid: "Loading...",
+          likes: 0,
+          isAnswerd: false
+        }]);
+        const [ userUuid , setUserUuid ] = useState("");
+        const [ inputText , setInputText ] = useState("");
+        const [ isLoaded, setIsLoaded ] = useState(false);
+        const [ cookieValue, setCookieValue ] = useState("");
+        const [ isLikes, setIsLikes ] = useState([]);
+        const [ nowContent, setNowContent ] = useState("");
+        const COOKIE_NAME = "user_uuid";
+
+        const domainWithPort = "http://" + window.location.host;
+
+
+
+        const getCookie = (name) => {
+          const cookies = document.cookie.split(";");
+          for (let cookie of cookies) {
+            const [cookieName, cookieValue] = cookie.split("=").map((c) => c.trim());
+            if (cookieName === name) {
+              return cookieValue;
+            }
           }
+          return "";
         }
-        return "";
-      }
 
-      const setCookie = (name, value, days = 7) => {
-        const expires = new Date();
-        expires.setDate(expires.getDate() + days);
-        document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
-        console.log(name, value);
-        setUserUuid(value);
-      }
+        const setCookie = (name, value, days = 7) => {
+          const expires = new Date();
+          expires.setDate(expires.getDate() + days);
+          document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+          console.log(name, value);
+          setUserUuid(value);
+        }
 
-      useEffect(() => {
-        const existingCookie = getCookie(COOKIE_NAME);
-        if (existingCookie === "") {
-          setCookie(COOKIE_NAME , uuidv4());
-        } else {
-          setUserUuid(existingCookie);
-        }
-        const socket = io(domainWithPort);
-        
-        const joinData = {
-          roomid: data.roomid,
-          userid: existingCookie
-        }
-        socket.emit("join", joinData);
-        socket.on("message_history", (data) => {
-          setMessages(data.data);
-          setIsLikes(data.isLike);
-          console.log(data.isLike);
-        })
-        socket.on("new_message", (message) => {
-          console.log(message);
-          setMessages((prev) => {
-            return [...prev, message];
-          });
-          setIsLikes((prev) => {
-            return [...prev, false];
-          });
-          console.log(isLikes);
-        });
-        socket.on("like_plus_return", (data) => {
-          setMessages((prev) => {
-            return prev.map((message) => {
-              if (message.textid === data.textid) {
-                return {
-                  ...message,
-                  likes: message.likes + 1
-                }
-              }
-              return message;
+        useEffect(() => {
+          const existingCookie = getCookie(COOKIE_NAME);
+          if (existingCookie === "") {
+            setCookie(COOKIE_NAME , uuidv4());
+          } else {
+            setUserUuid(existingCookie);
+          }
+          const socket = io(domainWithPort);
+
+          const joinData = {
+            roomid: data.roomid,
+            userid: existingCookie
+          }
+          socket.emit("join", joinData);
+          socket.on("message_history/" + data.roomid, (data) => {
+            setMessages(data.data);
+            setIsLikes(data.isLike);
+            console.log(data.isLike);
+          })
+          socket.on("new_message/" + data.roomid, (message) => {
+            console.log(message);
+            setMessages((prev) => {
+              return [...prev, message];
             });
+            setIsLikes((prev) => {
+              return [...prev, false];
+            });
+            console.log(isLikes);
           });
-          if (data.userid === existingCookie) {
-            setIsLikes(prev => {
-            const newList = [...prev].slice().reverse();
-            newList[data.index] = true;
-            return newList.slice().reverse();
+          socket.on("like_plus_return", (data) => {
+            setMessages((prev) => {
+              return prev.map((message) => {
+                if (message.textid === data.textid) {
+                  return {
+                    ...message,
+                    likes: message.likes + 1
+                  }
+                }
+                return message;
+              });
+            });
+            if (data.userid === existingCookie) {
+              setIsLikes(prev => {
+              const newList = [...prev].slice().reverse();
+              newList[data.index] = true;
+              return newList.slice().reverse();
+            });
+            }
           });
+          setIsLoaded(true);
+        }, []);
+        const handleSendMessage = (e) => {
+          if (e === "") {
+            alert("文字を入力してください");
+            return;
           }
-        });
-        setIsLoaded(true);
-      }, []);
-      const handleSendMessage = (e) => {
-        if (e === "") {
-          alert("文字を入力してください");
-          return;
+          const socket = io(domainWithPort);
+          const sendMessage = {
+            text: e,
+            textid: uuidv4(),
+            userid: userUuid
+          }
+          console.log(sendMessage);
+          socket.emit("message", sendMessage, data.roomid);
+        };
+        const handleLikePlus = (textid, index) => {
+
+          const socket = io(domainWithPort);
+          const likePlusData = {
+            textid: textid,
+            userid: userUuid,
+            roomid: data.roomid,
+            index: index
+          }
+          socket.emit("like_plus", likePlusData);
         }
-        const socket = io(domainWithPort);
-        const sendMessage = {
-          text: e,
-          textid: uuidv4(),
-          userid: userUuid
-        }
-        console.log(sendMessage);
-        socket.emit("message", sendMessage, data.roomid);
-      };
-      const handleLikePlus = (textid, index) => {
-        
-        const socket = io(domainWithPort);
-        const likePlusData = {
-          textid: textid,
-          userid: userUuid,
-          roomid: data.roomid,
-          index: index
-        }
-        socket.emit("like_plus", likePlusData);
-      }
-      if (!isLoaded) {
-        return (
-          <div>
-            <h1>Loading...</h1>
-          </div>
-        )
-      }
-      return (
-        <>
-        <div className="drawer">
-          <input id="my-drawer-3" type="checkbox" className="drawer-toggle" />
-          <div className="drawer-content flex flex-col">
-            {/* Navbar */}
-            <div className="navbar bg-base-300 w-full">
-              <div className="flex-none lg:hidden">
-                <label htmlFor="my-drawer-3" aria-label="open sidebar" className="btn btn-square btn-ghost">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    className="inline-block h-6 w-6 stroke-current">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 6h16M4 12h16M4 18h16"></path>
-                  </svg>
-                </label>
-              </div>
-              <div className="mx-2 flex-1 px-2">{data.name}</div>
-              <div className="hidden flex-none lg:block">
-                <ul className="menu menu-horizontal">
-                  {/* Navbar menu content here */}
-                  <li><a>Navbar Item 1</a></li>
-                  <li><a>Navbar Item 2</a></li>
-                </ul>
-              </div>
+        if (!isLoaded) {
+          return (
+            <div>
+              <h1>Loading...</h1>
             </div>
-            <div className="grid grid-cols-2 h-100">
-                {/* dataShow */}
-                <div className="m-4">
-                  <div className="card bg-base-100 w-full shadow-xl p-3">
-                  <div className="card-body">
-                    <h2 className="card-title">現在の内容</h2>
-                    <p>{nowContent}</p>
-                    <p>{userUuid}</p>
-                    
+          )
+        }
+        return (
+          <>
+          <div className="drawer">
+            <input id="my-drawer-3" type="checkbox" className="drawer-toggle" />
+            <div className="drawer-content flex flex-col">
+              {/* Navbar */}
+              <div className="navbar bg-base-300 w-full">
+                <div className="flex-none lg:hidden">
+                  <label htmlFor="my-drawer-3" aria-label="open sidebar" className="btn btn-square btn-ghost">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      className="inline-block h-6 w-6 stroke-current">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                  </label>
+                </div>
+                <div className="mx-2 flex-1 px-2">{data.name}</div>
+                <div className="hidden flex-none lg:block">
+                  <ul className="menu menu-horizontal">
+                    {/* Navbar menu content here */}
+                    <li><a>Navbar Item 1</a></li>
+                    <li><a>Navbar Item 2</a></li>
+                  </ul>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 h-100">
+                  {/* dataShow */}
+                  <div className="m-4">
+                    <div className="card bg-base-100 w-full shadow-xl p-3">
+                    <div className="card-body">
+                      <h2 className="card-title">現在の内容</h2>
+                      <p>{nowContent}</p>
+                      <p>{userUuid}</p>
+
+                    </div>
+                  </div>
+                  <br />
+                  <textarea
+                  className="textarea textarea-bordered w-full"
+                  placeholder="質問"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  ></textarea>
+                  <br/>
+                  <button
+                    className="w-full bg-indigo-400 rounded-lg p-2 text-black"
+                    onClick={() => {
+                      handleSendMessage(inputText);
+                      setInputText("");
+                      console.log(isLikes);
+                    }}
+                  >
+                    送信={'>'}
+                  </button>
+                  </div>
+                  {/* Chat */}
+                  <div className="m-4 h-screen overflow-y-auto">
+                    <div className="divider">Chat</div>
+                    {(messages.reduceRight((p, c) => [...p, c], [])).map((message, index) => (
+                      <div key={index}>
+                        <div className="m-3" >
+                          <p>{message.text}</p>
+                          <br/>
+                          { message.userid === userUuid ? (
+                            <>
+                            {message.likes}
+                            </>
+                          ) : (
+                            <>
+                            <button
+                              className={clsx("btn btn-circle btn-sm", (isLikes.reduceRight((p, c) => [...p, c], []))[index] && "btn-disabled")}
+                              onClick={() => {
+                                handleLikePlus(message.textid, index);
+                              }}
+                              >
+                              <i className={clsx("fa-regular fa-heart ", (isLikes.reduceRight((p, c) => [...p, c], []))[index] && "text-red-600" )} ></i>
+                              </button>
+                              <span>   {message.likes}</span>
+                            </>
+                          ) }
+                        </div>
+                        <div className="divider"></div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <br />
-                <textarea 
-                className="textarea textarea-bordered w-full" 
-                placeholder="質問"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                ></textarea>
-                <br/>
-                <button
-                  className="w-full bg-indigo-400 rounded-lg p-2 text-black"
-                  onClick={() => {
-                    handleSendMessage(inputText);
-                    setInputText("");
-                    console.log(isLikes);
-                  }}
-                >
-                  送信={'>'}
-                </button>
-                </div>
-                {/* Chat */}
-                <div className="m-4 h-screen overflow-y-auto">
-                  <div className="divider">Chat</div>
-                  {(messages.reduceRight((p, c) => [...p, c], [])).map((message, index) => (
-                    <div key={index}>
-                      <div className="m-3" >
-                        <p>{message.text}</p>
-                        <br/>
-                        { message.userid === userUuid ? (
-                          <>
-                          {message.likes}
-                          </>
-                        ) : (
-                          <>
-                          <button
-                            className={clsx("btn btn-circle btn-sm", (isLikes.reduceRight((p, c) => [...p, c], []))[index] && "btn-disabled")}
-                            onClick={() => {
-                              handleLikePlus(message.textid, index);
-                            }}
-                            >
-                            <i className={clsx("fa-regular fa-heart ", (isLikes.reduceRight((p, c) => [...p, c], []))[index] && "text-red-600" )} ></i>
-                            </button>
-                            <span>   {message.likes}</span>
-                          </>
-                        ) }
-                      </div>
-                      <div className="divider"></div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            </div>
+            <div className="drawer-side">
+              <label htmlFor="my-drawer-3" aria-label="close sidebar" className="drawer-overlay"></label>
+              <ul className="menu bg-base-200 min-h-full w-80 p-4">
+                {/* Sidebar content here */}
+                <li><a>Sidebar Item 1</a></li>
+                <li><a>Sidebar Item 2</a></li>
+              </ul>
+            </div>
           </div>
-          <div className="drawer-side">
-            <label htmlFor="my-drawer-3" aria-label="close sidebar" className="drawer-overlay"></label>
-            <ul className="menu bg-base-200 min-h-full w-80 p-4">
-              {/* Sidebar content here */}
-              <li><a>Sidebar Item 1</a></li>
-              <li><a>Sidebar Item 2</a></li>
-            </ul>
-          </div>
-        </div>
-        </>
-      );
-    };
-    const container = document.getElementById("app");
-    const root = createRoot(container);
-    root.render(<App />);
-  </script>
-</body>
+          </>
+        );
+      };
+      const container = document.getElementById("app");
+      const root = createRoot(container);
+      root.render(<App />);
+    </script>
+  </body>
 </html>

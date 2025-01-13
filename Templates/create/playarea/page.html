@@ -4,6 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title>index</title>
+  <script src="
+https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
+"></script>
+
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://use.fontawesome.com/releases/v6.7.2/css/all.css" rel="stylesheet">
@@ -16,12 +20,12 @@
         "react-dom": "https://esm.sh/react-dom@19.0.0/client",
         "socket.io-client": "https://esm.sh/socket.io-client@4.8.1?exports=io",
         "clsx": "https://esm.sh/clsx",
-        "class-variance-authority": "https://esm.sh/class-variance-authority"
+        "class-variance-authority": "https://esm.sh/class-variance-authority",
+        "qrcode.react": "https://esm.sh/qrcode.react@4.2.0"
       }
     }
 
   </script>
-  <script type="module" src="https://esm.sh/run" defer></script>
 
   
   
@@ -29,16 +33,19 @@
 </head>
 <body>
   <div id="app"></div>
-  <script type="text/babel">
+  <script type="text/babel" data-type="module">
     import React, { useEffect, useState } from "react"
     import { createRoot } from "react-dom"
     import clsx from "clsx"
     import { cva } from "class-variance-authority"
     import { io } from "socket.io-client"
+    import {QRCodeCanvas} from "qrcode.react"
 
 
 
     const App = () => {
+
+      const data = {{ roomdata | tojson | safe }};
 
       const url = window.location.href
       const [ id , setId ] = useState("");
@@ -46,9 +53,9 @@
       const [ name , setName ] = useState("");
       const [ comment , setComment ] = useState("");
 
-      const [ users , setUsers ] = useState("3434");
-      const [ questions , setQuestions ] = useState("34");
-      const [ replied , setReplied ] = useState("2");
+      const [ users , setUsers ] = useState("Loading...");
+      const [ questions , setQuestions ] = useState("Loading...");
+      const [ replied , setReplied ] = useState("Loading...");
 
       const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       const [activeItem, setActiveItem] = useState('home');
@@ -64,6 +71,7 @@
       const menuItems = [
         { id: 'home', icon: "fa-solid fa-house", label: 'ホーム' },
         { id: 'analytics', icon: "fa-regular fa-comments", label: '質問' },
+        { id: 'qrcode', icon: "fa-solid fa-qrcode", label: 'QRコード' },
       ];
       const statItems = [
         { id: 'users', icon: "fa-solid fa-user", label: '参加者数', value: users },
@@ -71,24 +79,30 @@
         { id: 'response', icon: "fa-solid fa-reply", label: '回答数', value: replied },
       ]
 
-      const domainWithPort = "https://" + window.location.host;
+      const domainWithPort = "http://" + window.location.host;
 
       useEffect(() => {
         const socket = io(domainWithPort);
         const joinData = {
-          roomid: "aaa",
+          roomid: data.roomid,
         }
         socket.emit("hostJoin", joinData);
 
-        socket.on("message_history", (data) => {
+        socket.on("message_history/" + data.roomid, (data) => {
           setMessages(data.data);
+          setQuestions(data.data.length);
 
         });
 
-        socket.on("new_message", (data) => {
+        socket.on("new_message/" + data.roomid, (data) => {
           setMessages((prev) => {
-            return [...prev, message];
+            console.log(prev);
+            return [...prev, data];
           });
+          
+          setQuestions((prev) => {
+            return prev + 1;
+          }); 
         });
 
       }, []);
@@ -123,7 +137,7 @@
                     <h1 className="text-2xl font-bold text-gray-800">最新の質問</h1>
                     <div className="divider"></div>
 
-                    {(messages.reduceRight((p, c) => [...p, c], [])).map((message, index) => (
+                    {(messages.reduceRight((p, c) => [...p, c], [])).slice(0,3).map((message, index) => (
                     <div key={index}>
                       <div className="m-3" >
                         <p>{message.text}</p>
@@ -145,8 +159,56 @@
             );
           case 'analytics':
             return (
+            <div className="grid grid-cols-2 h-100">
+              {/* dataShow */}
+              <div className="m-4">
+                <div className="card bg-base-100 w-full shadow-xl p-3">
+                <div className="card-body">
+                  <h2 className="card-title">現在の内容</h2>
+                  <p>nowContent</p>
+                  <p>userUuid</p>
+
+                </div>
+              </div>
+              <br />
+              
+              <br/>
+              <button
+                className="w-full bg-indigo-400 rounded-lg p-2 text-black"
+                
+              >
+                送信={'>'}
+              </button>
+              </div>
+              {/* Chat */}
+              <div className="m-4 h-screen overflow-y-auto">
+                <div className="divider">Chat</div>
+                {(messages.reduceRight((p, c) => [...p, c], [])).map((message, index) => (
+                  <div key={index}>
+                    <div className="m-3" >
+                      <p>{message.text}</p>
+                      <br/>
+                      
+                    </div>
+                    <div className="divider"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            );
+          case 'qrcode':
+            return (
               <div>
-                aaa
+                <h1 className="text-2xl font-bold text-gray-800">参加用QRコード</h1>
+                <p className="mt-4 text-gray-600">次の画像を保存し参加者に共有してください。</p>
+                  <QRCodeCanvas 
+                    value={domainWithPort + "/entry/" + data.roomid + "/"}
+                    size={256}
+                    bgColor="#ffffff"
+                    fgColor="#000000"
+                    level="L"
+                    includeMargin={true}
+                  />
               </div>
             );
           default:
@@ -219,7 +281,7 @@
               {/* Header */}
               <header className="fixed top-0 right-0 z-20 flex items-center justify-end h-16 px-4 bg-white shadow-sm w-full">
                 <div className="flex items-center space-x-4">
-                  <p className="text-2xl">DSPX</p>
+                  <p className="text-2xl">{data.name}</p>
                   <button className="p-2 rounded-lg hover:bg-gray-100 relative">
                     <i class="fa-regular fa-bell"></i>                    
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
