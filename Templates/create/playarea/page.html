@@ -89,6 +89,7 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
           setAnswering(data.nowAnswering);
           setAnsweringID(data.nowAnsweringTextid);
           setAnswerdCount(data.answerdCount);
+          setUsers(data.users);
           setIsLoading(false);
         }
 
@@ -115,9 +116,9 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
             return prev + 1;
           }); 
         });
-        socket.on("new_user/" + data.roomid, (data) => {
+        socket.on("user_join/" + data.roomid, (data) => {
           setUsers((prev) => {
-            return prev + 1;
+            return data.users;
           });
         });
 
@@ -186,7 +187,11 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
             console.log(err);
           });
       }
-      const answerCompleted = (textid) => {
+      const answerCompleted = () => {
+        if(answeringID == ""){
+          alert("回答中の質問がありません。");
+          return;
+        }
         fetch(domainWithPort + "/api/answercompleted" , {
           method: "POST",
           headers: {
@@ -279,7 +284,7 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
               <button
                 className="w-full bg-indigo-400 rounded-lg p-2 text-black"
                 onClick={() => {
-                  answerCompleted(data.nowAnsweringId);
+                  answerCompleted();
                 }}
               >
                 解答済みにする
@@ -399,11 +404,20 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
               <header className="fixed top-0 right-0 z-20 flex items-center justify-end h-16 px-4 bg-white shadow-sm w-full">
                 <div className="flex items-center space-x-4">
                   <p className="text-2xl">{data.name}</p>
-                  <button className="p-2 rounded-lg hover:bg-gray-100 relative">
-                    <i class="fa-regular fa-bell"></i>                    
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                  </button>
-                  <div className="w-8 h-8 rounded-full bg-blue-500"></div>
+                  <div className="dropdown dropdown-end">
+                    <button tabIndex={0} role="button" className="p-2 rounded-lg hover:bg-gray-100 relative">
+                      <i class="fa-solid fa-ellipsis-vertical"></i>                    
+                    </button>
+                    <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+                      <li><a>ルームを閉じる*未実装</a></li>
+                      <li><a
+                          onClick={() => {
+                            window.location.reload();
+                          }}
+                        >再読み込み</a></li>
+                    </ul>
+                  </div>
+                  
                 </div>
               </header>
 

@@ -47,6 +47,7 @@ def create_playarea(roomid):
     db = dataset.connect('sqlite:///chat.db')
     room_table = db['room']
     roomdata = room_table.find_one(roomid=roomid)
+    users = len(roomdata["joinedUser"])
     db.executable.invalidate()
     db.executable.engine.dispose()
     db.close()
@@ -57,7 +58,8 @@ def create_playarea(roomid):
         "nowAnswering": roomdata["nowAnswering"],
         "nowAnsweringTextid": roomdata["nowAnsweringTextid"],
         "api_key": API_KEY,
-        "answerdCount": roomdata["answerdCount"]
+        "answerdCount": roomdata["answerdCount"],
+        "users": users
     }
     return render_template("/create/playarea/page.html", roomdata=returnData)
 
@@ -94,6 +96,7 @@ def playarea(roomid):
             "comment": roomdata["comment"],
             "nowAnswering": roomdata["nowAnswering"],
             "nowAnsweringTextid": roomdata["nowAnsweringTextid"],
+            
         }
         return render_template("/entry/playarea/page.html", roomdata=returnData)
     except:
@@ -118,7 +121,7 @@ def create_room():
         db = dataset.connect('sqlite:///chat.db')
         room_table = db['room']
         room_uuid = "tbl-" + str(uuid.uuid4())
-        room_table.insert(dict(roomid= room_uuid, name=data["name"], comment=data["comment"], nowAnswering="", nowAnsweringTextid="", answerdCount=0))
+        room_table.insert(dict(roomid= room_uuid, name=data["name"], comment=data["comment"], nowAnswering="", nowAnsweringTextid="", answerdCount=0, joinedUser=[]))
         db.executable.invalidate()
         db.executable.engine.dispose()
         db.close()
@@ -204,6 +207,7 @@ def on_join(joinData):
     db = dataset.connect('sqlite:///chat.db')
     text_db = dataset.connect('sqlite:///textid.db')    
     room_table = db[joinData["roomid"]]
+    
     data = []
     isLike = []
     for row in room_table:
@@ -222,9 +226,23 @@ def on_join(joinData):
     text_db.executable.invalidate()
     text_db.executable.engine.dispose()
     text_db.close()
+    table = db['room']
+    roomdata = table.find_one(roomid=joinData["roomid"])
+    #joinedUserにjoinData["userid"]が見つからない場合追加する
+    if joinData["userid"] not in roomdata["joinedUser"]:
+        roomdata["joinedUser"].append(joinData["userid"])
+        table.update(roomdata, ['roomid'])
+    else:
+        pass
+    userCount = {
+        "users":len(roomdata["joinedUser"])
+    }
+
+
     db.executable.invalidate()
     db.executable.engine.dispose()
     db.close()
+    emit("user_join/" + joinData["roomid"], userCount, broadcast=True)
     emit("message_history/" + joinData["roomid"], returnData, broadcast=False)
 
 @socketio.on('hostJoin')
