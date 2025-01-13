@@ -10,7 +10,7 @@ app = Flask(__name__)
 socketio = SocketIO(app)
 
 ACCESS_TOKEN = "abcdx"
-DEBUG = True
+DEBUG = False
 if DEBUG:
     API_KEY = "a"
 else:
