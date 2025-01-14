@@ -48,7 +48,12 @@ def create_playarea(roomid):
         db = dataset.connect('sqlite:///chat.db')
         room_table = db['room']
         roomdata = room_table.find_one(roomid=roomid)
-        users = len(roomdata["joinedUser"])
+        print(roomdata["joinedUser"])
+        if roomdata["joinedUser"] == "":
+            users = 0
+        else:
+            lst = roomdata["joinedUser"].split(",")
+            users = len(lst)
         db.executable.invalidate()
         db.executable.engine.dispose()
         db.close()
@@ -124,7 +129,7 @@ def create_room():
         db = dataset.connect('sqlite:///chat.db')
         room_table = db['room']
         room_uuid = "tbl-" + str(uuid.uuid4())
-        room_table.insert(dict(roomid= room_uuid, name=data["name"], comment=data["comment"], nowAnswering="", nowAnsweringTextid="", answerdCount=0, joinedUser=[]))
+        room_table.insert(dict(roomid= room_uuid, name=data["name"], comment=data["comment"], nowAnswering="", nowAnsweringTextid="", answerdCount=0, joinedUser=""))
         db.executable.invalidate()
         db.executable.engine.dispose()
         db.close()
@@ -232,14 +237,26 @@ def on_join(joinData):
     table = db['room']
     roomdata = table.find_one(roomid=joinData["roomid"])
     #joinedUserにjoinData["userid"]が見つからない場合追加する
-    if joinData["userid"] not in roomdata["joinedUser"]:
-        roomdata["joinedUser"].append(joinData["userid"])
+    if roomdata["joinedUser"] == "":
+        roomdata["joinedUser"] = joinData["userid"]
         table.update(roomdata, ['roomid'])
+        userCount = {
+            "users":1
+        }
+        
     else:
-        pass
-    userCount = {
-        "users":len(roomdata["joinedUser"])
-    }
+        lst = roomdata["joinedUser"].split(",")
+        
+        if joinData["userid"] not in lst:
+            lst.append(joinData["userid"])
+            print(lst)
+            roomdata["joinedUser"] = ",".join(lst)
+            table.update(roomdata, ['roomid'])
+        else:
+            pass
+        userCount = {
+            "users":len(lst)
+        }
 
 
     db.executable.invalidate()

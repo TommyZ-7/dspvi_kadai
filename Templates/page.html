@@ -3,9 +3,12 @@
   <meta charset="utf-8">
   <title>index</title>
   <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
     {
       "imports": {
+        "@jsxImportSource": "https://esm.sh/react@19.0.0",
         "react": "https://esm.sh/react@19.0.0",
         "react-dom": "https://esm.sh/react-dom@19.0.0/client"
         }
@@ -17,12 +20,40 @@
     import { createRoot } from "react-dom"
 
     const Counter = () => {
-      const [count, setCount] = useState(0);
-      const handleClick = () => setCount((n) => n + 1);
+      const [ id , setId ] = useState("");
       return (
         <>
-          <div>Count: {count}</div>
-          <button onClick={handleClick}>Increment</button>
+        <div
+        
+        className="flex items-center justify-center h-screen bg-[url('../static//images/bg1.webp')] bg-cover bg-center"
+        >  
+          <div className="card glass w-96">
+            <figure>
+              <img
+                src="../static//images/nit.jpg"
+                alt="nit" />
+            </figure>
+            <div className="card-body">
+              <h2 className="card-title text-black">授業コードを入力</h2>
+              <input
+                type="text"
+                className="input input-bordered"
+                value={id}
+                onChange={(e) => setId(e.target.value)}
+              />
+              <div className="card-actions justify-end">
+                <button 
+                className="btn btn-primary"
+                onClick={() => {
+                  window.location.href = "/entry/" + id;
+                }}
+                >
+                  entry
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         </>
       );
     };
