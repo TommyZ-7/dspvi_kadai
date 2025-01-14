@@ -14,7 +14,8 @@ DEBUG = False
 if DEBUG:
     API_KEY = "a"
 else:
-    API_KEY = uuid.uuid4()
+    #API_KEY = uuid.uuid4()
+    API_KEY = "3cfda95f-b3dd-44db-a427-09dbd9e3e581"
     
 
 

@@ -95,20 +95,28 @@
             setAnswering(data.nowAnswering);
             setAnsweringID(data.nowAnsweringTextid);
             setIsLoading(false);
+            document.title = data.name;
           }
           const existingCookie = getCookie(COOKIE_NAME);
+          let userIdentifier;
+        
           if (existingCookie === "") {
-            setCookie(COOKIE_NAME , uuidv4());
+            userIdentifier = "usr-" + uuidv4();
+            setCookie(COOKIE_NAME, userIdentifier);
           } else {
+            userIdentifier = existingCookie;
             setUserUuid(existingCookie);
           }
+        
+          // socketの接続とjoinの処理
           const socket = io(domainWithPort);
-
           const joinData = {
             roomid: data.roomid,
-            userid: existingCookie
+            userid: userIdentifier  // 確実に値が入った状態のidentifierを使用
           }
+        
           socket.emit("join", joinData);
+
           socket.on("message_history/" + data.roomid, (data) => {
             setMessages(data.data);
             setIsLikes(data.isLike);
@@ -177,7 +185,7 @@
           const socket = io(domainWithPort);
           const sendMessage = {
             text: e,
-            textid: uuidv4(),
+            textid: "cht-" + uuidv4(),
             userid: userUuid
           }
           console.log(sendMessage);

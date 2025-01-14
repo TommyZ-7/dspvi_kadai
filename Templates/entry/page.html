@@ -38,6 +38,7 @@
       const data = {{ roomdata | tojson | safe }};
       console.log(data);
       console.log(window.location.href);
+      document.title = data.name;
       return (
         <>
         <div

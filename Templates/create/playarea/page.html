@@ -46,6 +46,7 @@ https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.5/babel.min.js
     const App = () => {
 
       const data = {{ roomdata | tojson | safe }};
+      document.title = data.name + "管理ページ";
 
       const url = window.location.href
       const [ id , setId ] = useState("");
